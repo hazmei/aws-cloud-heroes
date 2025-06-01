@@ -88,18 +88,21 @@ def start_game():
     total_pause_time = 0
     new_question()
 
-def new_question():
-    global current_service, options, correct_option, selected_option
-    
-    # Reset selected option
+def reset_game_state():
+    """Reset the game state for a new question."""
+    global selected_option
     selected_option = -1
-    
-    # Select a random service
+
+def select_random_service():
+    """Select a random AWS service to quiz the player on."""
+    global current_service
     current_service = random.choice(aws_services)
-    
-    # Create options (one correct, three wrong)
+    return current_service
+
+def generate_answer_options(correct_description):
+    """Generate a list of answer options (one correct, three wrong)."""
+    # Get all descriptions
     all_descriptions = [service["description"] for service in aws_services]
-    correct_description = current_service["description"]
     
     # Remove the correct answer from potential wrong answers
     wrong_descriptions = [desc for desc in all_descriptions if desc != correct_description]
@@ -111,8 +114,28 @@ def new_question():
     options = [correct_description] + selected_wrong
     random.shuffle(options)
     
+    return options
+
+def find_correct_option_index(options, correct_description):
+    """Find the index of the correct option in the options list."""
+    return options.index(correct_description)
+
+def new_question():
+    """Set up a new question for the player."""
+    global current_service, options, correct_option
+    
+    # Reset game state
+    reset_game_state()
+    
+    # Select a random service
+    current_service = select_random_service()
+    correct_description = current_service["description"]
+    
+    # Generate answer options
+    options = generate_answer_options(correct_description)
+    
     # Track the correct option
-    correct_option = options.index(correct_description)
+    correct_option = find_correct_option_index(options, correct_description)
 
 def show_feedback(is_correct):
     global game_state, feedback_message, feedback_color, feedback_start_time, pause_time
