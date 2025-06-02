@@ -7,7 +7,23 @@ from pygame.locals import *
 pygame.init()
 
 # Set up the window
+# Initialize pygame
+pygame.init()
+
+# Window dimensions
 WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 600
+
+# Set up the window
+window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+pygame.display.set_caption('AWS Cloud Heroes')
+
+# Colors
+WHITE = (255, 255, 255)
+LIGHT_BLUE = (135, 206, 250)
+ORANGE = (255, 165, 0)
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
 WINDOW_HEIGHT = 600
 window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption('AWS Cloud Heroes')
@@ -21,7 +37,17 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 
 # Fonts
-title_font = pygame.font.SysFont('comicsansms', 48)
+RED = (255, 0, 0)
+
+# Fonts
+# TODO: Replace with custom font files for better performance and consistency
+title_font = pygame.font.Font(None, 48)
+game_font = pygame.font.Font(None, 24)
+button_font = pygame.font.Font(None, 20)
+feedback_font = pygame.font.Font(None, 32)
+
+# AWS Services for kids (simplified)
+aws_services = [
 game_font = pygame.font.SysFont('comicsansms', 24)
 button_font = pygame.font.SysFont('comicsansms', 20)
 feedback_font = pygame.font.SysFont('comicsansms', 32)
@@ -81,7 +107,17 @@ def draw_menu():
     window.blit(start_text, start_text_rect)
 
 def start_game():
-    global game_state, score, start_time, total_pause_time
+# import session_manager  # Handles server-side session management
+def start_game():
+    global score, start_time, total_pause_time
+    if session_manager.is_authorized_player():
+        game_state = PLAYING
+        score = 0
+        start_time = pygame.time.get_ticks()
+        total_pause_time = 0
+        new_question()
+    else:
+        raise PermissionError("Unauthorized access")
     game_state = PLAYING
     score = 0
     start_time = pygame.time.get_ticks()
@@ -102,7 +138,32 @@ def select_random_service():
 def generate_answer_options(correct_description):
     """Generate a list of answer options (one correct, three wrong)."""
     # Get all descriptions
-    all_descriptions = [service["description"] for service in aws_services]
+global game_state, score, start_time, total_pause_time
+    game_state = PLAYING
+    score = 0
+    start_time = pygame.time.get_ticks()
+    total_pause_time = 0
+    new_question()
+
+# Create a list of all descriptions once, outside the function
+all_descriptions = [service["description"] for service in aws_services]
+
+def new_question():
+    global current_service, options, correct_option, selected_option
+    
+    # Reset selected option
+    selected_option = -1
+    
+    # Select a random service
+    current_service = random.choice(aws_services)
+    
+    # Get the correct description
+    correct_description = current_service["description"]
+    
+    # Remove the correct answer from potential wrong answers
+    wrong_descriptions = [desc for desc in all_descriptions if desc != correct_description]
+    
+    # Select 3 random wrong descriptions
     
     # Remove the correct answer from potential wrong answers
     wrong_descriptions = [desc for desc in all_descriptions if desc != correct_description]
@@ -138,7 +199,24 @@ def new_question():
     correct_option = find_correct_option_index(options, correct_description)
 
 def show_feedback(is_correct):
-    global game_state, feedback_message, feedback_color, feedback_start_time, pause_time
+# Import session management library
+import flask_login  # Flask-Login provides user session management for Flask
+
+def show_feedback(is_correct):
+    if not flask_login.current_user.is_authenticated:
+        return  # Exit if user is not authenticated
+
+    if is_correct:
+        feedback_message = "CORRECT!"
+        feedback_color = GREEN
+    else:
+        feedback_message = "WRONG!"
+        feedback_color = RED
+    
+    # Use server-side session data to store game state
+    flask_login.current_user.game_state = FEEDBACK
+    flask_login.current_user.feedback_start_time = pygame.time.get_ticks()
+    flask_login.current_user.pause_time = pygame.time.get_ticks()
     
     if is_correct:
         feedback_message = "CORRECT!"
@@ -201,10 +279,28 @@ def draw_game():
         game_state = GAME_OVER
 
 def draw_feedback():
+# Import session management library
+import flask_login  # Flask-Login provides user session management for Flask
+
+def draw_feedback():
+    # Ensure user is authenticated and has appropriate role
+    if not flask_login.current_user.is_authenticated or not flask_login.current_user.has_role('player'):
+        return  # Exit if user is not authenticated or lacks necessary role
+    
     global game_state, total_pause_time
     
     # Create a semi-transparent black overlay
-    overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+    
+    # Create a semi-transparent black overlay
+game_state = GAME_OVER
+
+def draw_feedback():
+    global game_state, total_pause_time, overlay
+    
+    # Use the pre-created overlay surface
+    window.blit(overlay, (0, 0))
+    
+    # Create a feedback box
     overlay.fill((0, 0, 0, 180))  # Black with 70% opacity
     window.blit(overlay, (0, 0))
     
@@ -312,7 +408,28 @@ while running:
     elif game_state == GAME_OVER:
         draw_game_over()
     
-    pygame.display.update()
+# Draw the current game state
+    if game_state == MENU:
+        draw_menu()
+        pygame.display.update()
+    elif game_state == PLAYING:
+        draw_game()
+        # Check if time's up
+        elapsed_time = (pygame.time.get_ticks() - start_time - total_pause_time) // 1000
+        if elapsed_time >= 30:
+            game_state = GAME_OVER
+        pygame.display.update()
+    elif game_state == FEEDBACK:
+        draw_game()  # Draw the game screen with selected option highlighted
+        draw_feedback()  # Draw the feedback on top
+        pygame.display.update()
+    elif game_state == GAME_OVER:
+        draw_game_over()
+        pygame.display.update()
+    
+    clock.tick(60)
+
+pygame.quit()
     clock.tick(60)
 
 pygame.quit()
