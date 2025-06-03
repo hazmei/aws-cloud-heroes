@@ -8,6 +8,7 @@ a fun matching game where they connect service names with their functions.
 import pygame
 import sys
 import random
+import math
 from pygame.locals import *
 
 # Initialize pygame
@@ -28,11 +29,13 @@ FEEDBACK = 3
 # Colors
 WHITE = (255, 255, 255)
 BLUE = (135, 206, 250)
+LIGHT_BLUE = (173, 216, 230)
 ORANGE = (255, 165, 0)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 DARK_GRAY = (50, 50, 50)
+YELLOW = (255, 255, 0)
 
 # Set up the window
 window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -67,6 +70,128 @@ all_descriptions = [service["description"] for service in aws_services]
 # Create overlay surface once for efficiency
 overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
 
+# Animation variables
+clouds = []
+stars = []
+lambda_functions = []
+
+def init_animations():
+    """Initialize animation elements for the menu screen."""
+    global clouds, stars, lambda_functions
+    
+    # Create clouds (representing AWS cloud)
+    clouds = []
+    for i in range(5):
+        cloud = {
+            'x': random.randint(0, WINDOW_WIDTH),
+            'y': random.randint(50, 150),
+            'size': random.randint(60, 100),
+            'speed': random.uniform(0.5, 1.5)
+        }
+        clouds.append(cloud)
+    
+    # Create stars (representing S3)
+    stars = []
+    for i in range(8):
+        star = {
+            'x': random.randint(0, WINDOW_WIDTH),
+            'y': random.randint(50, WINDOW_HEIGHT - 100),
+            'size': random.randint(15, 30),
+            'angle': 0,
+            'speed': random.uniform(0.02, 0.05)
+        }
+        stars.append(star)
+    
+    # Create lambda functions (representing AWS Lambda)
+    lambda_functions = []
+    for i in range(3):
+        lambda_func = {
+            'x': random.randint(50, WINDOW_WIDTH - 50),
+            'y': random.randint(WINDOW_HEIGHT - 200, WINDOW_HEIGHT - 100),
+            'size': random.randint(30, 50),
+            'direction': random.choice([-1, 1]),
+            'speed': random.uniform(1, 2)
+        }
+        lambda_functions.append(lambda_func)
+
+def draw_cloud(x, y, size):
+    """Draw a simple cloud shape."""
+    # Main cloud body
+    pygame.draw.circle(window, WHITE, (int(x), int(y)), int(size))
+    pygame.draw.circle(window, WHITE, (int(x - size/2), int(y)), int(size*0.7))
+    pygame.draw.circle(window, WHITE, (int(x + size/2), int(y)), int(size*0.7))
+    pygame.draw.circle(window, WHITE, (int(x - size/4), int(y - size/3)), int(size*0.6))
+    pygame.draw.circle(window, WHITE, (int(x + size/4), int(y - size/3)), int(size*0.6))
+    
+    # AWS logo hint (simplified)
+    pygame.draw.line(window, ORANGE, (int(x - size/3), int(y + size/6)), 
+                    (int(x + size/3), int(y + size/6)), 3)
+
+def draw_star(x, y, size, angle):
+    """Draw a star shape (representing S3)."""
+    points = []
+    for i in range(5):
+        # Outer points
+        outer_x = x + size * math.cos(angle + i * 2 * math.pi / 5)
+        outer_y = y + size * math.sin(angle + i * 2 * math.pi / 5)
+        points.append((outer_x, outer_y))
+        
+        # Inner points
+        inner_x = x + size/2.5 * math.cos(angle + i * 2 * math.pi / 5 + math.pi/5)
+        inner_y = y + size/2.5 * math.sin(angle + i * 2 * math.pi / 5 + math.pi/5)
+        points.append((inner_x, inner_y))
+    
+    pygame.draw.polygon(window, YELLOW, points)
+    # S3 text
+    s3_text = pygame.font.SysFont('Times New Roman', int(size/2)).render("S3", True, BLACK)
+    text_rect = s3_text.get_rect(center=(x, y))
+    window.blit(s3_text, text_rect)
+
+def draw_lambda_symbol(x, y, size):
+    """Draw the AWS Lambda symbol (λ)."""
+    lambda_color = (254, 153, 0)  # Lambda orange
+    font = pygame.font.SysFont('Times New Roman', size)
+    lambda_text = font.render("λ", True, lambda_color)
+    text_rect = lambda_text.get_rect(center=(x, y))
+    window.blit(lambda_text, text_rect)
+    
+    # Small box around lambda
+    box_rect = pygame.Rect(x - size/2, y - size/2, size, size)
+    pygame.draw.rect(window, lambda_color, box_rect, 2, 3)
+
+def update_animations():
+    """Update positions of animated elements."""
+    # Update cloud positions
+    for cloud in clouds:
+        cloud['x'] += cloud['speed']
+        if cloud['x'] > WINDOW_WIDTH + cloud['size']:
+            cloud['x'] = -cloud['size']
+            cloud['y'] = random.randint(50, 150)
+    
+    # Update star rotations
+    for star in stars:
+        star['angle'] += star['speed']
+    
+    # Update lambda positions
+    for lambda_func in lambda_functions:
+        lambda_func['x'] += lambda_func['speed'] * lambda_func['direction']
+        if lambda_func['x'] > WINDOW_WIDTH - 50 or lambda_func['x'] < 50:
+            lambda_func['direction'] *= -1
+
+def draw_animations():
+    """Draw all animated elements."""
+    # Draw clouds
+    for cloud in clouds:
+        draw_cloud(cloud['x'], cloud['y'], cloud['size'])
+    
+    # Draw stars
+    for star in stars:
+        draw_star(star['x'], star['y'], star['size'], star['angle'])
+    
+    # Draw lambda symbols
+    for lambda_func in lambda_functions:
+        draw_lambda_symbol(lambda_func['x'], lambda_func['y'], lambda_func['size'])
+
 class GameState:
     """Class to manage game state and variables."""
     
@@ -89,9 +214,16 @@ game = GameState()
 
 def draw_menu():
     """Draw the main menu screen."""
-    window.fill(BLUE)
+    window.fill(LIGHT_BLUE)  # Lighter blue for sky background
     
-    # Title
+    # Draw animated AWS-themed elements
+    draw_animations()
+    
+    # Title with shadow effect for better visibility
+    title_shadow = title_font.render("AWS Cloud Heroes", True, BLACK)
+    title_shadow_rect = title_shadow.get_rect(center=(WINDOW_WIDTH/2 + 3, 103))
+    window.blit(title_shadow, title_shadow_rect)
+    
     title = title_font.render("AWS Cloud Heroes", True, ORANGE)
     title_rect = title.get_rect(center=(WINDOW_WIDTH/2, 100))
     window.blit(title, title_rect)
@@ -105,8 +237,19 @@ def draw_menu():
     desc2_rect = desc2.get_rect(center=(WINDOW_WIDTH/2, 240))
     window.blit(desc2, desc2_rect)
     
-    # Start button
-    draw_button(WINDOW_WIDTH/2 - 100, 350, 200, 50, ORANGE, "Start Game", WHITE)
+    # Start button with pulsing effect
+    button_size = 1.0 + 0.05 * math.sin(pygame.time.get_ticks() / 200)
+    button_width = 200 * button_size
+    button_height = 50 * button_size
+    
+    pygame.draw.rect(window, ORANGE, 
+                    (WINDOW_WIDTH/2 - button_width/2, 350, button_width, button_height), 0, 10)
+    pygame.draw.rect(window, (255, 140, 0),  # Darker orange border
+                    (WINDOW_WIDTH/2 - button_width/2, 350, button_width, button_height), 3, 10)
+    
+    start_text = button_font.render("Start Game", True, WHITE)
+    start_text_rect = start_text.get_rect(center=(WINDOW_WIDTH/2, 375))
+    window.blit(start_text, start_text_rect)
 
 def draw_button(x, y, width, height, color, text, text_color):
     """Draw a button with text."""
@@ -282,8 +425,14 @@ def draw_game_over():
 
 def handle_menu_click(mouse_pos):
     """Handle mouse clicks on the menu screen."""
+    # Calculate button dimensions (matching the pulsing effect in draw_menu)
+    button_size = 1.0 + 0.05 * math.sin(pygame.time.get_ticks() / 200)
+    button_width = 200 * button_size
+    button_height = 50 * button_size
+    
     # Check if start button clicked
-    if WINDOW_WIDTH/2 - 100 <= mouse_pos[0] <= WINDOW_WIDTH/2 + 100 and 350 <= mouse_pos[1] <= 400:
+    if (WINDOW_WIDTH/2 - button_width/2 <= mouse_pos[0] <= WINDOW_WIDTH/2 + button_width/2 and 
+        350 <= mouse_pos[1] <= 350 + button_height):
         start_game()
 
 def handle_playing_click(mouse_pos):
@@ -316,6 +465,9 @@ def main():
     """Main game loop."""
     clock = pygame.time.Clock()
     running = True
+    
+    # Initialize animations for the menu screen
+    init_animations()
 
     while running:
         for event in pygame.event.get():
@@ -331,6 +483,10 @@ def main():
                     handle_playing_click(mouse_pos)
                 elif game.state == GAME_OVER:
                     handle_game_over_click(mouse_pos)
+        
+        # Update animations
+        if game.state == MENU:
+            update_animations()
         
         # Draw the current game state
         if game.state == MENU:
