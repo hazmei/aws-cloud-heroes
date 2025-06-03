@@ -40,10 +40,10 @@ pygame.display.set_caption('AWS Cloud Heroes')
 
 # Fonts
 try:
-    title_font = pygame.font.SysFont('comicsansms', 48)
-    game_font = pygame.font.SysFont('comicsansms', 24)
-    button_font = pygame.font.SysFont('comicsansms', 20)
-    feedback_font = pygame.font.SysFont('comicsansms', 32)
+    title_font = pygame.font.SysFont('Times New Roman', 48)
+    game_font = pygame.font.SysFont('Times New Roman', 24)
+    button_font = pygame.font.SysFont('Times New Roman', 20)
+    feedback_font = pygame.font.SysFont('Times New Roman', 32)
 except:
     # Fallback to default font if custom font not available
     title_font = pygame.font.Font(None, 48)
