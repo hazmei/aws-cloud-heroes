@@ -50,6 +50,14 @@ The game introduces these AWS services in kid-friendly terms:
 - Python 3.6 or higher
 - Pygame 2.0.0 or higher
 
+## Project Structure
+
+- `aws_cloud_heroes.py` - Main entry point for the game
+- `game.py` - Core game logic and state management
+- `ui.py` - UI components and rendering functions
+- `animations.py` - Animation system for visual elements
+- `config.py` - Game settings and AWS service definitions
+
 ## Game Features
 
 - Kid-friendly interface with bright colors
@@ -58,6 +66,7 @@ The game introduces these AWS services in kid-friendly terms:
 - Score tracking
 - Multiple game states (menu, playing, game over)
 - Replay functionality
+- Animated AWS-themed elements
 
 ## Future Enhancements
 
