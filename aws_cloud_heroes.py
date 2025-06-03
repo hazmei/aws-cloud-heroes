@@ -196,7 +196,11 @@ def draw_game():
     window.blit(score_text, score_rect)
     
     # Draw the service name
-    service_box = pygame.Rect(WINDOW_WIDTH/2 - 100, 100, 200, 100)
+    service_box = pygame.Rect(WINDOW_WIDTH/2 - 150, 100, 300, 100)  # Wider box for longer service names
+    
+    # Draw a thicker border for the service box
+    border_box = pygame.Rect(WINDOW_WIDTH/2 - 155, 95, 310, 110)
+    pygame.draw.rect(window, BLACK, border_box, 0, 12)
     pygame.draw.rect(window, game.current_service["color"], service_box, 0, 10)
     
     service_text = title_font.render(game.current_service["name"], True, WHITE)
